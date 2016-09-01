@@ -1,0 +1,30 @@
+#include "clock.h"
+#include "syscon.h"
+#include "swm.h"
+#include "gpioport.h"
+#include "gpio.h"
+#include "button.h"
+#include "led.h"
+
+extern void setup(void);
+extern void loop(void);
+
+int main(void) {
+    swm_init();
+    swm_connect_fixed(SYSCON_RESET);
+    gpioport_init();
+    gpio_set_mode(PIO0_5, INPUT);
+    gpio_set_mode(PIO0_2, OUTPUT);
+    setup();
+    while(1) loop();
+}
+
+void setup(void) 
+{
+    led_write(LED, true);
+}
+
+void loop(void) 
+{
+}
+

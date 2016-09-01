@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+import os, sys
+from os.path import join, exists
+from fabricate import main, autoclean, run
+from armnoneeabi import MM, CXX, CC, AS, LD, AR, OBJCOPY, search, templates, paths
+
+from config import mcu
+
+mcutype = type(mcu)
+vendor = mcutype.vendor
+family = mcutype.family
+part = mcutype.part
+
+target = mcu.application
+drivers  = mcu.drivers()
+objects = mcu.compile() + mcu.objects
+
+crustdir = os.getenv('CRUST','../../../')
+
+path, incpath, libpath = paths(crustdir, vendor, family, part)
+
+ldscript = mcutype.part+'.ld'
+
+mm = MM()
+asm = AS(mcu,path)
+cc = CC(mcu,path)
+cxx = CXX(mcu,path)
+ar = AR()
+ld = LD(mcu,ldscript,path[0])
+objcopy = OBJCOPY()
+
+def build():
+
+    targetc = target+'.c'
+    targeto = target+'.o'
+    targetelf = target+'.elf'
+    targetbin = target+'.bin'
+
+    prep(drivers)
+
+    compile(objects)
+
+    ar(part,[obj + '.o' for obj in objects])
+
+    cc(targeto,targetc)
+
+    ld(targetelf,targeto)
+
+    objcopy(targetbin,targetelf)
+
+    if exists(targetc+'.gold'):
+         run('cmp',targetc, targetc+'.gold')
+    if exists(targetbin+'.gold'):
+         run('cmp',targetbin, targetbin+'.gold')
+
+def prep(driver):
+    pairs = templates(driver, path, incpath, libpath)
+    pairs.append((ldscript,join(path[1],family+'.t')))
+    pairs.append((target+'.c',target+'.t'))
+
+    for obj, src in pairs:
+        mm(obj,src)
+
+
+def compile(objects):
+    for obj in objects:
+        filename = search(obj,libpath,['.s', '.c', '.cpp'])
+        if not filename:
+            print "can't find", obj
+        obj = obj + '.o'
+        src = filename
+        if src.endswith('.s'):
+            asm(obj,src)
+        elif src.endswith('.c'):
+            cc(obj,src)
+        elif src.endswith('.cpp'):
+            cxx(obj,src)
+
+def clean():
+    autoclean()
+
+def upload():
+    build()
+    if vendor == 'nxp':
+        os.system('flushmagic.py '+target+'.bin')
+    elif vendor == 'stm':
+        os.system('cp '+target+'.bin'+' /Volumes/NODE*')
+
+def gold():
+    os.system('cp '+target+'.bin '+target+'.bin.gold')
+    os.system('cp '+target+'.c '+target+'.c.gold')
+
+main()

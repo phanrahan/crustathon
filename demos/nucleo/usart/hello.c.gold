@@ -1,0 +1,35 @@
+#include "clock.h"
+#include "systick.h"
+#include "gpioport.h"
+#include "usart.h"
+#include "gpio.h"
+#include "serial.h"
+
+extern void setup(void);
+extern void loop(void);
+
+int main(void) {
+    systick_init(1000);
+    gpioport_on(GPIOPORTA);
+    usart_on(USART2);
+    gpio_set_af(PA2, 1);
+    gpio_set_pullup(PA2, GPIO_PUPD_NONE);
+    gpio_set_drive(PA2, GPIO_DRIVE_PP);
+    gpio_set_speed(PA2, GPIO_SPEED_100MHZ);
+    serial_init(CONSOLE);
+    setup();
+    while(1) loop();
+}
+
+void setup(void) {
+}
+
+void loop (void) {
+    const char *cp;
+    const char *hello = "hello, world\n\r";
+
+    for( cp = hello; *cp != 0; )
+        serial_putc(CONSOLE, *cp++);
+
+    systick_delay(1000);
+}

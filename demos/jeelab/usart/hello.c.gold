@@ -1,0 +1,37 @@
+#include "clock.h"
+#include "systick.h"
+#include "syscon.h"
+#include "swm.h"
+#include "gpioport.h"
+#include "usart.h"
+#include "gpio.h"
+#include "button.h"
+#include "serial.h"
+
+extern void setup(void);
+extern void loop(void);
+
+int main(void) {
+    systick_init(1000);
+    swm_init();
+    swm_connect_fixed(SYSCON_RESET);
+    swm_connect_movable(USART0_TXD,PIO0_4);
+    gpioport_init();
+    usart_on(USART0);
+    gpio_set_mode(PIO0_5, INPUT);
+    gpio_set_mode(PIO0_4, OUTPUT);
+    serial_init(CONSOLE);
+    setup();
+    while(1) loop();
+}
+
+void setup(void) 
+{
+}
+
+void loop (void) 
+{
+    serial_puts(CONSOLE, "hello, world\n\r");
+    systick_delay(1000);
+}
+

@@ -1,0 +1,30 @@
+#include "clock.h"
+#include "gpioport.h"
+#include "gpio.h"
+#include "led.h"
+
+extern void setup(void);
+extern void loop(void);
+
+int main(void) {
+    gpioport_on(GPIOPORTA);
+    gpio_set_mode(PA5, GPIO_MODE_OUTPUT);
+    setup();
+    while(1) loop();
+}
+
+void dummy(unsigned int);
+
+void setup(void) {
+}
+
+void loop(void) {
+    gpio_write(LED, true);
+    for(int ra=0;ra<800000;ra++) dummy(ra);
+
+    gpio_write(LED, false);
+    for(int ra=0;ra<200000;ra++) dummy(ra);
+}
+
+
+
